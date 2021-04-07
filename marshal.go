@@ -120,6 +120,9 @@ var (
 	ErrUnknownSecurityLevel = errors.New("unknown security level")
 	ErrUnknownUsername      = errors.New("unknown username")
 	ErrWrongDigest          = errors.New("wrong digest")
+	ErrUnmarshallVariables  = errors.New("failed to unmarshall variables")
+	ErrUnmarshallHeader     = errors.New("failed to unmarshall header")
+	ErrNoVariables          = errors.New("no variables in result")
 )
 
 const rxBufSize = 65535 // max size of IPv4 & IPv6 packet
@@ -151,7 +154,10 @@ func (x *GoSNMP) logPrintf(format string, v ...interface{}) {
 
 // send/receive one snmp request
 func (x *GoSNMP) sendOneRequest(packetOut *SnmpPacket,
-	wait bool) (result *SnmpPacket, err error) {
+	wait bool) (*SnmpPacket, error) {
+	var err error
+	var result *SnmpPacket
+
 	allReqIDs := make([]uint32, 0, x.Retries+1)
 	// allMsgIDs := make([]uint32, 0, x.Retries+1) // unused
 
@@ -289,7 +295,7 @@ func (x *GoSNMP) sendOneRequest(packetOut *SnmpPacket,
 			cursor, err = x.unmarshalHeader(resp, result)
 			if err != nil {
 				x.logPrintf("ERROR on unmarshall header: %s", err)
-				continue
+				return result, ErrUnmarshallHeader
 			}
 
 			if x.Version == Version3 {
@@ -310,11 +316,11 @@ func (x *GoSNMP) sendOneRequest(packetOut *SnmpPacket,
 			err = x.unmarshalPayload(resp, cursor, result)
 			if err != nil {
 				x.logPrintf("ERROR on UnmarshalPayload on v3: %s", err)
-				continue
+				return result, ErrUnmarshallVariables
 			}
 			if result.Error == NoError && len(result.Variables) < 1 {
 				x.logPrintf("ERROR on UnmarshalPayload on v3: Empty result")
-				continue
+				return result, ErrNoVariables
 			}
 
 			// While Report PDU was defined by RFC 1905 as part of SNMPv2, it was never
@@ -381,7 +387,7 @@ func (x *GoSNMP) sendOneRequest(packetOut *SnmpPacket,
 	}
 
 	// Return last error
-	return nil, err
+	return result, err
 }
 
 // generic "sender" that negotiate any version of snmp request
