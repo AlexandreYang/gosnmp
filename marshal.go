@@ -295,7 +295,7 @@ func (x *GoSNMP) sendOneRequest(packetOut *SnmpPacket,
 			cursor, err = x.unmarshalHeader(resp, result)
 			if err != nil {
 				x.logPrintf("ERROR on unmarshall header: %s", err)
-				return result, ErrUnmarshallHeader
+				return nil, ErrUnmarshallHeader
 			}
 
 			if x.Version == Version3 {
@@ -387,7 +387,7 @@ func (x *GoSNMP) sendOneRequest(packetOut *SnmpPacket,
 	}
 
 	// Return last error
-	return result, err
+	return nil, err
 }
 
 // generic "sender" that negotiate any version of snmp request
