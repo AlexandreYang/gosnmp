@@ -154,10 +154,7 @@ func (x *GoSNMP) logPrintf(format string, v ...interface{}) {
 
 // send/receive one snmp request
 func (x *GoSNMP) sendOneRequest(packetOut *SnmpPacket,
-	wait bool) (*SnmpPacket, error) {
-	var err error
-	var result *SnmpPacket
-
+	wait bool) (result *SnmpPacket, err error) {
 	allReqIDs := make([]uint32, 0, x.Retries+1)
 	// allMsgIDs := make([]uint32, 0, x.Retries+1) // unused
 
